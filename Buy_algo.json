@@ -1,0 +1,790 @@
+{
+  "name": "Buy_algo",
+  "nodes": [
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "httpMethod": [
+          "GET"
+        ],
+        "path": "2ba09564-387e-46cb-a9ce-66af3327656a",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1216,
+        240
+      ],
+      "id": "a892037c-f6e1-4a60-83ea-98bef1e2e3b6",
+      "name": "Webhook",
+      "webhookId": "2ba09564-387e-46cb-a9ce-66af3327656a"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "16a2d892-4805-4cf4-9cc8-61a3c791db38",
+              "leftValue": "={{ $json.query.title }}",
+              "rightValue": "New Swing Signal Alert",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1040,
+        352
+      ],
+      "id": "6aa05034-2ca1-43ed-b052-00f9e0b617d1",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const query = item.json.query || {};\n  const message = query.text || \"\";\n  const fullText = Object.keys(query).find(key => key.includes(\"CALL\")) || \"\";\n\n  // 1. Extract stock symbol after \"Buy\"\n  const symbolMatch = message.match(/Buy\\s+([^\\s]+)/i);\n  if (symbolMatch) {\n    item.json.symbol = symbolMatch[1];\n  } else {\n    item.json.symbol = \"NOT_FOUND\";\n  }\n\n  // 2. Extract price, SL and Target from the longer message (if present)\n  const longText = fullText || \"\"; \n\n  const priceMatch = longText.match(/at\\s*₹([\\d.]+)/i);\n  const slMatch = longText.match(/SL\\s*₹([\\d.]+)/i);\n  const targetMatch = longText.match(/Target\\s*₹([\\d.]+)/i);\n\n  item.json.price = priceMatch ? parseFloat(priceMatch[1]) : null;\n  item.json.sl = slMatch ? parseFloat(slMatch[1]) : null;\n  item.json.target = targetMatch ? parseFloat(targetMatch[1]) : null;\n\n  return item;\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -752,
+        -336
+      ],
+      "id": "842bbceb-7760-49aa-b5eb-504cdffac946",
+      "name": "symbol of AI trade",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const price = item.json.price; // should already be parsed in previous step\n  const capital = 50000;         // per trade capital\n  const marginMultiplier = 5;    // intraday leverage\n\n  if (!price || price <= 0) {\n    item.json.calc = { error: \"Invalid price\" };\n    return item;\n  }\n\n  // 1️⃣ Calculate max quantity without margin\n  const qtyWithoutMargin = Math.floor(capital / price);\n\n  // 2️⃣ Apply intraday margin\n  const finalQty = qtyWithoutMargin * marginMultiplier;\n\n  // 3️⃣ Calculate Stop Loss (0.65%) and Target (2%)\n  const stopLossPrice = +(price * (1 - 0.0065)).toFixed(2);\n  const targetPrice = +(price * (1 + 0.02)).toFixed(2);\n\n  // 4️⃣ Attach to item\n  item.json.calc = {\n    price: price,\n    qtyWithoutMargin: qtyWithoutMargin,\n    finalQty: finalQty,\n    stopLossPrice: stopLossPrice,\n    targetPrice: targetPrice\n  };\n\n  return item;\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -496,
+        -336
+      ],
+      "id": "769168aa-fe03-4b94-ba85-bb85fe1fcfd3",
+      "name": "caculation for AI trade",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const yahooFinance = require('yahoo-finance2').default;\n\nconst CAPITAL_PER_TRADE = 50000;\nconst MARGIN_MULTIPLIER = 5;\nconst STOPLOSS_PERCENT = 0.0065;\nconst TARGET_PERCENT = 0.02;\nconst TIMEOUT_MINUTES = 40;\n\n// ===== MOCK BROKER API =====\nfunction placeMarketBuy(symbol, qty, price) {\n  console.log(`[BUY] ${qty} ${symbol} at INR ${price}`);\n}\n\nfunction placeMarketSell(symbol, qty, price, reason) {\n  console.log(`[SELL] ${qty} ${symbol} at INR ${price} — Reason: ${reason}`);\n}\n\n// ===== FETCH LIVE OPEN PRICE =====\nasync function fetchCurrentOpen(symbol) {\n  try {\n    const yfSymbol = symbol.toUpperCase() + \".NS\";\n    const queryOptions = { interval: '1m', period1: '1d' };\n    const result = await yahooFinance.historical(yfSymbol, queryOptions);\n    if (result && result.length > 0) {\n      const latest = result[result.length - 1];\n      return parseFloat(latest.open.toFixed(2));\n    }\n  } catch (err) {\n    console.log(`Error fetching live price for ${symbol}: ${err}`);\n  }\n  return null;\n}\n\n// ===== MAIN TRADE FUNCTION =====\nasync function executeTrade(symbol, entryPrice) {\n  console.log(`\\n[INFO] Received trade signal for ${symbol} at INR ${entryPrice}`);\n\n  const qtyWithoutMargin = Math.floor(CAPITAL_PER_TRADE / entryPrice);\n  const finalQty = qtyWithoutMargin * MARGIN_MULTIPLIER;\n\n  const stopLoss = parseFloat((entryPrice * (1 - STOPLOSS_PERCENT)).toFixed(2));\n  const target = parseFloat((entryPrice * (1 + TARGET_PERCENT)).toFixed(2));\n\n  console.log(`[INFO] Calculated Stop Loss: INR ${stopLoss}, Target: INR ${target}, Qty: ${finalQty}`);\n\n  const currentPrice = await fetchCurrentOpen(symbol);\n  if (!currentPrice) {\n    console.log(\"[ERROR] Could not fetch current price. Aborting trade.\");\n    return;\n  }\n\n  placeMarketBuy(symbol, finalQty, currentPrice);\n\n  const startTime = new Date();\n  console.log(`[INFO] Monitoring started at ${startTime.toLocaleTimeString()} for ${TIMEOUT_MINUTES} mins...`);\n\n  const interval = setInterval(async () => {\n    const livePrice = await fetchCurrentOpen(symbol);\n    if (!livePrice) {\n      console.log(\"[WARN] No live price, retrying...\");\n      return;\n    }\n\n    const now = new Date();\n    if (livePrice <= stopLoss) {\n      placeMarketSell(symbol, finalQty, livePrice, \"Stop Loss Hit\");\n      clearInterval(interval);\n    } else if (livePrice >= target) {\n      placeMarketSell(symbol, finalQty, livePrice, \"Target Hit\");\n      clearInterval(interval);\n    } else if ((now - startTime) / 60000 >= TIMEOUT_MINUTES) {\n      placeMarketSell(symbol, finalQty, livePrice, \"Timeout 40 min\");\n      clearInterval(interval);\n    } else {\n      console.log(`[${now.toLocaleTimeString()}] ${symbol} Live Price INR ${livePrice} | SL INR ${stopLoss} | TGT INR ${target}`);\n    }\n  }, 20000); // 20-second interval\n}\n\n// ===== EXAMPLE USAGE =====\nexecuteTrade(\"YATHARTH\", 785.35);\n// executeTrade(\"M&M\", 91.45);\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1200,
+        -336
+      ],
+      "id": "a70f371b-226c-4f68-901d-2ffbd4a0c2a6",
+      "name": "Code in JavaScript",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "=http://35.212.175.185:5000/stock?symbol={{ $json.trade.symbol }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        144,
+        -320
+      ],
+      "id": "fed71fb1-bd40-47fa-9383-ca53ef763c21",
+      "name": "LIVE DATA API",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst trade = item.trade;\nconst apiUrl = `http://35.212.175.185:5000/stock?symbol=${trade.symbol}`;\n\nasync function fetchCurrentPrice() {\n  const response = await this.helpers.httpRequest({\n    method: 'GET',\n    url: apiUrl,\n    json: true\n  });\n  return response.Open;\n}\n\nconst startTime = Date.now();\nconst timeout = 40 * 60 * 1000; // 40 minutes\nlet currentPrice = null;\n\n// 📝 Store logs to return at the end\nconst logs = [];\n\n// 🟢 First log — BUY placed\nlogs.push({\n  action: 'BUY',\n  symbol: trade.symbol,\n  qty: trade.finalQty,\n  price: trade.price,\n  time: new Date().toISOString()\n});\n\nwhile (true) {\n  currentPrice = await fetchCurrentPrice.call(this);\n\n  logs.push({\n    action: 'FETCH',\n    price: currentPrice,\n    time: new Date().toISOString()\n  });\n\n  if (currentPrice >= trade.targetPrice) {\n    logs.push({\n      action: 'SELL',\n      reason: 'TARGET',\n      price: currentPrice,\n      time: new Date().toISOString()\n    });\n    return [{ trade, logs }];\n  }\n\n  if (currentPrice <= trade.stopLossPrice) {\n    logs.push({\n      action: 'SELL',\n      reason: 'STOPLOSS',\n      price: currentPrice,\n      time: new Date().toISOString()\n    });\n    return [{ trade, logs }];\n  }\n\n  if (Date.now() - startTime >= timeout) {\n    logs.push({\n      action: 'SELL',\n      reason: 'TIMEOUT',\n      price: currentPrice,\n      time: new Date().toISOString()\n    });\n    return [{ trade, logs }];\n  }\n\n  await new Promise(resolve => setTimeout(resolve, 20000));\n}\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        -320
+      ],
+      "id": "761de4b0-7542-4bb2-8597-7fe4a8fe7093",
+      "name": "Logic code",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = items[0].json;\n\nconst text = input.query.text || input.query.bigtext || \"\";\nconst trade = {};\n\n// 1. Extract symbol\n// This handles both \"Buy M&M 28 OCT...\" and \"Buy YATHARTH at ₹...\"\nconst symbolMatch = text.match(/Buy\\s+([A-Za-z&]+)\\b/);\ntrade.symbol = symbolMatch ? symbolMatch[1] : null;\n\n// 2. Extract price (handles both cases)\nconst priceMatch = text.match(/at\\s*₹\\s*([\\d.]+)/i);\ntrade.price = priceMatch ? parseFloat(priceMatch[1]) : null;\n\n// 3. Calculate quantities and SL/Target if price is found\nif (trade.price) {\n  const capitalPerTrade = 50000;         // Fixed capital\n  const qtyWithoutMargin = Math.floor(capitalPerTrade / trade.price);\n  const finalQty = qtyWithoutMargin * 5; // 5x margin\n\n  const stopLossPrice = trade.price * (1 - 0.0065); // 0.65% below\n  const targetPrice = trade.price * (1 + 0.02);     // 2% above\n\n  trade.qtyWithoutMargin = qtyWithoutMargin;\n  trade.finalQty = finalQty;\n  trade.stopLossPrice = parseFloat(stopLossPrice.toFixed(2));\n  trade.targetPrice = parseFloat(targetPrice.toFixed(2));\n} else {\n  trade.qtyWithoutMargin = null;\n  trade.finalQty = null;\n  trade.stopLossPrice = null;\n  trade.targetPrice = null;\n}\n\nreturn [\n  {\n    json: {\n      ...input,\n      trade\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -816,
+        224
+      ],
+      "id": "0e05df69-11be-442e-98bf-b7af2c7d5f61",
+      "name": "calculation & sybmol "
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "414a605c-1c08-4e30-8ca5-f0acb04ce808",
+              "leftValue": "={{ $json.query.title }}",
+              "rightValue": "New AI Options Signal Alert",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -976,
+        -336
+      ],
+      "id": "272ff73b-2b43-427e-be28-1fed8b34e129",
+      "name": "If1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// This code simulates a successful buy order for testing purposes.\n// It also contains a commented-out section for a REAL API call to Dhan.\n\n// Get the input data from the previous node.\nconst tradeData = items[0].json;\nconsole.log('--- Incoming Trade Data ---', tradeData);\n\n// =========================================================================\n// --- SECTION 1: REAL DHAN API CALL (Currently Commented Out) ---\n// =========================================================================\n/*\n// UNCOMMENT THE CODE BLOCK BELOW WHEN YOU ARE READY TO GO LIVE\n\n// Define your Dhan API credentials and trade details\nconst accessToken = 'YOUR_DHAN_ACCESS_TOKEN'; // IMPORTANT: Replace with your actual token\nconst apiUrl = 'https://api.dhan.co/v2/orders';\n\n// NOTE: The Dhan API often requires a 'securityId' (e.g., '2885' for RELIANCE)\n// not just a symbol ('RELIANCE'). You may need another step to get this ID.\nconst requestBody = {\n  securityId: 'YOUR_SECURITY_ID', // e.g., '2885' for RELIANCE\n  exchangeSegment: 'NSE_EQ', // e.g., NSE_EQ, BSE_EQ, NFO_OPT\n  transactionType: 'BUY',\n  quantity: tradeData.quantity,\n  orderType: 'MARKET', // Or 'LIMIT', 'SL', etc.\n  productType: 'INTRADAY', // Or 'CNC' for delivery\n  price: 0 // Price is 0 for MARKET orders\n};\n\n// Make the actual API call to Dhan\nconst response = await fetch(apiUrl, {\n  method: 'POST',\n  headers: {\n    'access-token': accessToken,\n    'Content-Type': 'application/json',\n    'Accept': 'application/json'\n  },\n  body: JSON.stringify(requestBody)\n});\n\nif (!response.ok) {\n  // If the API call fails, throw an error to stop the workflow\n  const errorData = await response.json();\n  throw new Error(`Dhan API Error: ${JSON.stringify(errorData)}`);\n}\n\n// Get the successful response data from Dhan\nconst realApiResponse = await response.json();\nconsole.log('--- Real Dhan API Response ---', realApiResponse);\n\n// Prepare the output data using the REAL response\nconst outputData = {\n  Symbol: tradeData.symbol,\n  Quantity: tradeData.quantity,\n  StopLoss: tradeData.sl,\n  Target: tradeData.tgt,\n  BuyPrice: tradeData.price, // Ideally, you'd parse the actual fill price from the response\n  DhanOrderId: realApiResponse.orderId, // Use the real orderId from Dhan\n  Status: 'OPEN'\n};\n\n*/\n// =========================================================================\n\n\n// =========================================================================\n// --- SECTION 2: MOCK API RESPONSE FOR TESTING (Currently Active) ---\n// =========================================================================\n\n// This part runs because the section above is commented out.\n// It allows you to test the rest of your workflow.\nconst mockApiResponse = {\n  orderId: Math.floor(100000000000 + Math.random() * 900000000000).toString(),\n  orderStatus: 'SUCCESSFUL',\n  message: 'Test order placed successfully.'\n};\n\nconst outputData = {\n  Symbol:$input.first().json.trade.symbol ,\n  Quantity:$input.first().json.trade.finalQty ,\n  StopLoss: $input.first().json.trade.stopLossPrice,\n  Target: $input.first().json.trade.targetPrice,\n  BuyPrice: $input.first().json.trade.price,\n  DhanOrderId: mockApiResponse.orderId,\n  Status: 'OPEN'\n};\n\n// =========================================================================\n\nconsole.log('--- Output to Next Node ---', outputData);\n\n// Return the final data for the next node in the workflow.\nreturn [\n  {\n    json: outputData\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        224
+      ],
+      "id": "e04f1e7d-db63-47e5-93b1-249966324426",
+      "name": "BUY order execute"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1UO3WzkjrgGB3fdy2XAr2DAfjYPM7mFpDHcUhhggPlgw",
+          "mode": "list",
+          "cachedResultName": "n8n Trading Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UO3WzkjrgGB3fdy2XAr2DAfjYPM7mFpDHcUhhggPlgw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UO3WzkjrgGB3fdy2XAr2DAfjYPM7mFpDHcUhhggPlgw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Symbol": "={{ $('BUY order execute').item.json.Symbol }}",
+            "Quantity": "={{ $('BUY order execute').item.json.Quantity }}",
+            "StopLoss": "={{ $('BUY order execute').item.json.StopLoss }}",
+            "Target": "={{ $('BUY order execute').item.json.Target }}",
+            "BuyPrice": "={{ $('BUY order execute').item.json.BuyPrice }}",
+            "DhanOrderId": "={{ $('BUY order execute').item.json.DhanOrderId }}",
+            "Status": "={{ $('BUY order execute').item.json.Status }}",
+            "EXIT_Time": "={{ $json.FinalExitTime }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Symbol",
+              "displayName": "Symbol",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Quantity",
+              "displayName": "Quantity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "StopLoss",
+              "displayName": "StopLoss",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Target",
+              "displayName": "Target",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "BuyPrice",
+              "displayName": "BuyPrice",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "DhanOrderId",
+              "displayName": "DhanOrderId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "PnL",
+              "displayName": "PnL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "EXIT_Time",
+              "displayName": "EXIT_Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        224
+      ],
+      "id": "3c4dc3ae-3419-4dda-ae80-960d55492360",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "OSeyqeH6tIH6NIYI",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Previous trade data\nconst trade = $json;\nconst price = $input.first().json.Price;\n\nlet action = \"loop\"; // default\n\nif (price <= trade.stopLoss) {\n  action = \"sell_sl\";\n} else if (price >= trade.target) {\n  action = \"sell_target\";\n}\n\n// Return data for next node\nreturn [\n  {\n    json: {\n      ...trade,\n      currentPrice: price,\n      action: action\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        -320
+      ],
+      "id": "08dedeae-e76c-4c7a-8d30-2d0086572d27",
+      "name": "wating for TGT OR SL",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "https://sagarkush25.app.n8n.cloud/webhook/46ad1732-2ae9-4c45-936c-9d5d2e59f572",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        656,
+        224
+      ],
+      "id": "58d5edb5-7c1c-4011-94b3-142a6fe918c6",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1UO3WzkjrgGB3fdy2XAr2DAfjYPM7mFpDHcUhhggPlgw",
+          "mode": "list",
+          "cachedResultName": "n8n Trading Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UO3WzkjrgGB3fdy2XAr2DAfjYPM7mFpDHcUhhggPlgw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UO3WzkjrgGB3fdy2XAr2DAfjYPM7mFpDHcUhhggPlgw/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "OPEN"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        896,
+        224
+      ],
+      "id": "f2f3d055-135e-48cd-9057-5853b8cc2b00",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "OSeyqeH6tIH6NIYI",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1104,
+        224
+      ],
+      "id": "02c49d1d-9927-4965-b9a9-875c8caf3585",
+      "name": "Wait",
+      "webhookId": "e4f21a43-fc04-4d4d-a6d4-78d5ea25fa34"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a8f9c7a9-7dff-45bd-8a2e-01a1fafe5487",
+              "name": "ExitTime318",
+              "value": "={{ $now.set({ hour: 15, minute: 18, second: 0 }).toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -416,
+        224
+      ],
+      "id": "dbd1a95b-1943-4096-afbb-feacfff80d9e",
+      "name": "Set 3:18 PM Deadline"
+    },
+    {
+      "parameters": {
+        "operation": "addToDate",
+        "magnitude": "={{ $now }}",
+        "timeUnit": "minutes",
+        "duration": 45,
+        "options": {
+          "includeInputFields": false
+        }
+      },
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        224
+      ],
+      "id": "1a3308e7-d2fa-4f9a-9383-ee7aa5624e43",
+      "name": "Calculate 45min Timer"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "64a1e592-d5b4-4141-8fc3-3c3c4f4e3d78",
+              "leftValue": "={{ $json.newDate }}",
+              "rightValue": "={{ $('Set 3:18 PM Deadline').item.json.ExitTime318 }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "before"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -16,
+        224
+      ],
+      "id": "7abfa0e3-221b-4c9f-a19b-206b47927b72",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "26cdea3f-f009-4dcb-8a8e-54caae8c44f5",
+              "name": "FinalExitTime",
+              "value": "={{ $('Calculate 45min Timer').item.json.newDate }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        80
+      ],
+      "id": "06c186e4-83da-459a-ac26-26a1a0a3f82c",
+      "name": "FinalExitTime"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fde59f1f-cc98-4c02-825a-7a5dc1b97916",
+              "name": "FinalExitTime",
+              "value": "={{ $('Set 3:18 PM Deadline').item.json.ExitTime318 }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        400
+      ],
+      "id": "710987d8-8a7a-41bd-9b9d-0027b66b1442",
+      "name": "FinalExitTime1"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "sagarkush25.app.n8n.cloud",
+            "user-agent": "android",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "182.72.39.9",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "IN",
+            "cf-ray": "98b2f68bb4ae4162-BOM",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "x-forwarded-for": "182.72.39.9, 172.69.95.114",
+            "x-forwarded-host": "sagarkush25.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-89-8567ddc79c-c6tjf",
+            "x-is-trusted": "yes",
+            "x-real-ip": "182.72.39.9"
+          },
+          "params": {},
+          "query": {
+            "name": "Stryke",
+            "pkg": "com.stockwiz.app",
+            "title": "New Swing Signal Alert 🔔",
+            "text": "Buy YATHARTH at ₹785.35 | SL ₹750.00 | TGT ₹907.5",
+            "subtext": "",
+            "bigtext": "Buy YATHARTH at ₹785.35 | SL ₹750.00 | TGT ₹907.5",
+            "infotext": ""
+          },
+          "body": {},
+          "webhookUrl": "https://sagarkush25.app.n8n.cloud/webhook/2ba09564-387e-46cb-a9ce-66af3327656a",
+          "executionMode": "production"
+        }
+      },
+      {
+        "json": {
+          "headers": {
+            "user-agent": "android",
+            "host": "192.168.137.1:5678",
+            "connection": "Keep-Alive",
+            "accept-encoding": "gzip"
+          },
+          "params": {},
+          "query": {
+            "name": "Stryke",
+            "pkg": "com.stockwiz.app",
+            "title": "New AI Options Signal Alert 🔔",
+            "text": "Buy M&M 28 OCT 3500 CALL at ₹91.45 | SL ₹57 | Target ₹194.3",
+            "subtext": "",
+            "bigtext": "Buy M&M",
+            "infotext": ""
+          },
+          "body": {},
+          "webhookUrl": "http://localhost:5678/webhook/2ba09564-387e-46cb-a9ce-66af3327656a",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "calculation & sybmol ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "symbol of AI trade": {
+      "main": [
+        [
+          {
+            "node": "caculation for AI trade",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        []
+      ]
+    },
+    "LIVE DATA API": {
+      "main": [
+        []
+      ]
+    },
+    "Logic code": {
+      "main": [
+        []
+      ]
+    },
+    "calculation & sybmol ": {
+      "main": [
+        [
+          {
+            "node": "BUY order execute",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "symbol of AI trade",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BUY order execute": {
+      "main": [
+        [
+          {
+            "node": "Set 3:18 PM Deadline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set 3:18 PM Deadline": {
+      "main": [
+        [
+          {
+            "node": "Calculate 45min Timer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate 45min Timer": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "FinalExitTime",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FinalExitTime1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FinalExitTime": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FinalExitTime1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ec0952f8-cab1-44be-8d4e-f2bc649e4a3d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e7c105a5d0a10624a89480d2cd0f877105ed26c1ef6ef60794495b1d2aec641b"
+  },
+  "id": "1g1Yct29FCuWZweI",
+  "tags": []
+}

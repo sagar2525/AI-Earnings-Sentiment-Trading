@@ -1,0 +1,634 @@
+{
+  "name": "Sell_algo",
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1UO3WzkjrgGB3fdy2XAr2DAfjYPM7mFpDHcUhhggPlgw",
+          "mode": "list",
+          "cachedResultName": "n8n Trading Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UO3WzkjrgGB3fdy2XAr2DAfjYPM7mFpDHcUhhggPlgw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UO3WzkjrgGB3fdy2XAr2DAfjYPM7mFpDHcUhhggPlgw/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "OPEN"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -240,
+        -144
+      ],
+      "id": "86516787-3bed-4fd3-8270-0fae33b73d7f",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "OSeyqeH6tIH6NIYI",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1UO3WzkjrgGB3fdy2XAr2DAfjYPM7mFpDHcUhhggPlgw",
+          "mode": "list",
+          "cachedResultName": "n8n Trading Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UO3WzkjrgGB3fdy2XAr2DAfjYPM7mFpDHcUhhggPlgw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UO3WzkjrgGB3fdy2XAr2DAfjYPM7mFpDHcUhhggPlgw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "Symbol": "={{ $('Get row(s) in sheet').item.json.Symbol }}",
+            "Quantity": "={{ $('Get row(s) in sheet').item.json.Quantity }}",
+            "StopLoss": "={{ $('Get row(s) in sheet').item.json.StopLoss }}",
+            "Target": "={{ $('Get row(s) in sheet').item.json.Target }}",
+            "BuyPrice": "={{ $('Get row(s) in sheet').item.json.BuyPrice }}",
+            "DhanOrderId": "={{ $('Get row(s) in sheet').item.json.DhanOrderId }}",
+            "Status": "CLOSED",
+            "PnL": "={{ $json.pnl }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Symbol",
+              "displayName": "Symbol",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Quantity",
+              "displayName": "Quantity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "StopLoss",
+              "displayName": "StopLoss",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Target",
+              "displayName": "Target",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "BuyPrice",
+              "displayName": "BuyPrice",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "DhanOrderId",
+              "displayName": "DhanOrderId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "PnL",
+              "displayName": "PnL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1536,
+        -160
+      ],
+      "id": "bf7cc8c1-f1fb-4da3-b08a-0a181d5b975b",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "OSeyqeH6tIH6NIYI",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "46ad1732-2ae9-4c45-936c-9d5d2e59f572",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -672,
+        -64
+      ],
+      "id": "27cc3043-34c9-403a-8ba1-cc410b1b9295",
+      "name": "Webhook",
+      "webhookId": "46ad1732-2ae9-4c45-936c-9d5d2e59f572"
+    },
+    {
+      "parameters": {
+        "amount": 20
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -192,
+        96
+      ],
+      "id": "a62fc47e-a292-4f7b-b4f0-25094e53484d",
+      "name": "Wait",
+      "webhookId": "6f067e3b-00d0-4129-ab12-94cb92ab4077"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "41eaf0f9-b1fe-457e-93d7-2bb196f644ce",
+              "leftValue": "={{ $json.Price }}",
+              "rightValue": "={{ $('Get row(s) in sheet').item.json.Target }}",
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "94907382-8979-4c51-b1fd-8b709d72c121",
+              "leftValue": "={{ $json.Price }}",
+              "rightValue": "={{ $('Get row(s) in sheet').item.json.StopLoss }}",
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            },
+            {
+              "id": "6519a83a-76b4-47dd-8d6a-0e5e8acb9b26",
+              "leftValue": "={{ $now.toISO() }}",
+              "rightValue": "={{ $('Get row(s) in sheet').item.json.EXIT_Time }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "after"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        -144
+      ],
+      "id": "0f5cc98c-0656-45ed-9db3-e744f4237249",
+      "name": "SL OR TGT Trigger condition "
+    },
+    {
+      "parameters": {
+        "url": "=http://35.212.170.223:5000/stock?symbol={{ $json.Symbol }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -16,
+        -144
+      ],
+      "id": "7ff2c30b-dcc9-493b-8150-fbc51814dbfa",
+      "name": "Live Marker Data API"
+    },
+    {
+      "parameters": {
+        "jsCode": "// This code simulates a successful SELL order.\n// It also contains the real Dhan API call, commented out for future use.\n\n// Get data from the previous nodes. We need the Google Sheets data.\nconst tradeData = $('Get row(s) in sheet').item.json;\nconsole.log('--- Incoming Trade Data for SELL ---', tradeData);\n\n// =========================================================================\n// --- SECTION 1: REAL DHAN API CALL (Currently Commented Out) ---\n// =========================================================================\n/*\nconst accessToken = 'YOUR_DHAN_ACCESS_TOKEN';\nconst apiUrl = 'https://api.dhan.co/v2/orders';\n\nconst requestBody = {\n  securityId: 'YOUR_SECURITY_ID', // You'll need to get this ID\n  exchangeSegment: 'NSE_EQ',\n  transactionType: 'SELL', // The only change is here\n  quantity: tradeData.Quantity,\n  orderType: 'MARKET',\n  productType: 'INTRADAY',\n  price: 0\n};\n\nconst response = await fetch(apiUrl, {\n  method: 'POST',\n  headers: {\n    'access-token': accessToken,\n    'Content-Type': 'application/json',\n    'Accept': 'application/json'\n  },\n  body: JSON.stringify(requestBody)\n});\n\nif (!response.ok) {\n  const errorData = await response.json();\n  throw new Error(`Dhan API Error: ${JSON.stringify(errorData)}`);\n}\nconst realApiResponse = await response.json();\nconsole.log('--- Real Dhan SELL Response ---', realApiResponse);\n*/\n// =========================================================================\n\n\n// =========================================================================\n// --- SECTION 2: MOCK API RESPONSE FOR TESTING (Currently Active) ---\n// =========================================================================\nconsole.log(`Simulating SELL order for ${tradeData.Quantity} shares of ${tradeData.Symbol}.`);\n\n// =========================================================================\n\n// --- MODIFICATION START ---\n// Get data from the immediate input node, which contains our 'reason' and 'pnl'.\nconst mergedInput = items[0].json;\n// --- MODIFICATION END ---\n\n\n// IMPORTANT: We must pass the row_number AND the new data to the next step\n// so we know which row to update in Google Sheets.\nconst outputData = {\n  row_number: $('Get row(s) in sheet').first().json.row_number,\n  status: 'SOLD',// <-- ADDED THIS LINE\n  pnl: $input.first().json.PnL        // <-- ADDED THIS LINE\n};\n\nconsole.log('--- Output to Next Node ---', outputData);\n\n// Return the data for the final step.\nreturn [{\n  json: outputData\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        -160
+      ],
+      "id": "9860cb59-71b7-4e96-86c9-0bcb5cc3ca52",
+      "name": "Logic For Sell Order"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9ac7fdbc-a704-48fa-bc62-d8915c8c70b5",
+              "name": "PnL",
+              "value": "={{ ($('Get row(s) in sheet').item.json.StopLoss - $('Get row(s) in sheet').item.json.BuyPrice) * $('Get row(s) in sheet').item.json.Quantity }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        800,
+        -400
+      ],
+      "id": "74bcf40d-c4f6-4167-ada2-4d2c943cb68b",
+      "name": "SL Hit Signal"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1a43d530-8e6d-44db-a948-6e01594f75fd",
+              "name": "PnL",
+              "value": "={{ ($('Get row(s) in sheet').item.json.Target - $('Get row(s) in sheet').item.json.BuyPrice) * $('Get row(s) in sheet').item.json.Quantity }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        96
+      ],
+      "id": "567147d2-4308-4723-b9cc-dcb8bcc20001",
+      "name": "TGT Hit Signal"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the input from whichever branch ran. n8n handles this merge automatically.\nconst inputData = items[0].json;\n\n// Simply return that same data as the output for the next node.\nreturn [{\n  json: inputData\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -160
+      ],
+      "id": "90716674-89b4-4cce-82e3-b32241cbb27b",
+      "name": "PnL calculation"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "acc2986f-8c52-4c8d-a114-16d1cd31fee0",
+              "leftValue": "={{ $json.Price }}",
+              "rightValue": "={{ $('Get row(s) in sheet').item.json.StopLoss }}",
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        -160
+      ],
+      "id": "11a287f3-55a6-42c5-bf47-baf21591e9a0",
+      "name": "True when SL hit"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "188f3f98-7fe0-4018-8f19-bbf54d8f2769",
+              "leftValue": "={{ $now.toISO() }}",
+              "rightValue": "={{ $('Get row(s) in sheet').item.json.EXIT_Time }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "after"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        624,
+        80
+      ],
+      "id": "17402e14-562c-4adc-bffa-de7ce6e3458b",
+      "name": "TIME_OUT_SELL"
+    },
+    {
+      "parameters": {
+        "jsCode": "// This node calculates the final Profit or Loss (PnL).\n\n// Get the data from the node that provided the live price.\nconst liveData =$('Live Marker Data API').first().json.Price ;\n\n// Get the original trade data from the node that read the Google Sheet.\nconst tradeData = $('Get row(s) in sheet').item.json;\n\n// Get the data from the immediate input (e.g., from the \"SL Hit Signal\" node)\n// so we can pass it through.\nconst inputData = items[0].json;\n\n// Use parseFloat() to ensure all values are treated as numbers for safety.\nconst currentPrice =$('Live Marker Data API').first().json.Price;\nconst buyPrice = $('Get row(s) in sheet').first().json.BuyPrice;\nconst quantity = $('Get row(s) in sheet').first().json.Quantity;\n\n// Calculate the Profit or Loss.\nconst pnl = (currentPrice - buyPrice) * quantity;\n\nconsole.log(`PnL Calculation: (${currentPrice} - ${buyPrice}) * ${quantity} = ${pnl}`);\n\n// Create a new output object that includes the original input data\n// and adds our new PnL calculation.\nconst outputData = {\n  ...inputData, // This copies all existing data (like 'reason', 'row_number')\n  PnL: pnl      // This adds our new PnL value\n};\n\n// Return the complete data for the next node.\nreturn [{\n  json: outputData\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        -160
+      ],
+      "id": "78de8dfd-21a0-4e1f-8b15-3ce66e0fa19d",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "sagarkush25.app.n8n.cloud",
+            "user-agent": "axios/1.12.0",
+            "accept": "application/json,text/html,application/xhtml+xml,application/xml,text/*;q=0.9, image/*;q=0.8, */*;q=0.7",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "4.184.78.247",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "DE",
+            "cf-ray": "98c4488c53929267-FRA",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "x-forwarded-for": "4.184.78.247, 172.68.192.167",
+            "x-forwarded-host": "sagarkush25.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-89-8567ddc79c-dl7fl",
+            "x-is-trusted": "yes",
+            "x-real-ip": "4.184.78.247"
+          },
+          "params": {},
+          "query": {},
+          "body": {},
+          "webhookUrl": "https://sagarkush25.app.n8n.cloud/webhook/46ad1732-2ae9-4c45-936c-9d5d2e59f572",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Live Marker Data API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        []
+      ]
+    },
+    "SL OR TGT Trigger condition ": {
+      "main": [
+        [
+          {
+            "node": "True when SL hit",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Live Marker Data API": {
+      "main": [
+        [
+          {
+            "node": "SL OR TGT Trigger condition ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Logic For Sell Order": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SL Hit Signal": {
+      "main": [
+        [
+          {
+            "node": "PnL calculation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TGT Hit Signal": {
+      "main": [
+        [
+          {
+            "node": "PnL calculation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PnL calculation": {
+      "main": [
+        [
+          {
+            "node": "Logic For Sell Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "True when SL hit": {
+      "main": [
+        [
+          {
+            "node": "SL Hit Signal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "TIME_OUT_SELL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TIME_OUT_SELL": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "TGT Hit Signal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "PnL calculation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a581baf5-1d25-4d7c-aacb-d404984db47c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e7c105a5d0a10624a89480d2cd0f877105ed26c1ef6ef60794495b1d2aec641b"
+  },
+  "id": "CpQbNFtxIwr4XdxW",
+  "tags": []
+}
