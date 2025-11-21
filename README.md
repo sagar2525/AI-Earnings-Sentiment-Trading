@@ -118,6 +118,7 @@ Docker / Docker Compose
 Cron Jobs / Scheduled Automation
 
 📁 Directory Structure
+
 project/
 │── downloads/               # Raw downloaded PDFs
 │── parsed_results/          # AI-extracted JSON data
