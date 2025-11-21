@@ -14,7 +14,7 @@ DOWNLOAD_DIR = "downloads"
 OUTPUT_DIR = "parsed_results"
 PROCESSED_FILE = "processed_companies.json"
 MODEL_NAME = "gemini-2.5-flash-lite"  # or "gemini-1.5-flash" for faster performance
-API_KEY = "AIzaSyAc-IbmZuLqCyqgl9CzuOoJg1COQSCbap4"
+API_KEY = ""
 
 # 🚀 Flask Order Execution Server Endpoint (change this URL if running remotely)
 ORDER_SERVER_URL = "http://127.0.0.1:5000/receive_data"
@@ -201,3 +201,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
