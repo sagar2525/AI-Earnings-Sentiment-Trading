@@ -1,24 +1,25 @@
-# AI-Earnings-Sentiment-Trading
+AI-Earnings-Sentiment-Trading
+
 The AI-Powered Earnings Sentiment Trading System is an automated pipeline that monitors NSE/BSE corporate announcements, downloads quarterly results PDFs in real time, extracts key financial metrics using an AI model, performs sentiment analysis, and executes trades automatically based on the results.
 
-This project is part of an end-to-end AI Trading Automation Suite that integrates Python, n8n workflows, a Google Cloud VM, and broker APIs.
+This project is part of an end-to-end AI Trading Automation Suite integrating Python, n8n workflows, Google Cloud VM, and broker APIs.
 
 🚀 Key Features
 1. Real-Time NSE/BSE Monitoring
 
-Continuously checks for new Board Meeting Outcome result PDFs.
+Continuously checks for new Board Meeting Outcome result PDFs
 
-Detects companies scheduled to release quarterly results.
+Detects companies scheduled to release quarterly results
 
 2. Automatic PDF Downloading
 
-Saves PDFs instantly when an announcement is published.
+Saves PDFs instantly when an announcement is published
 
-Stores structured directories for organized data.
+Stores files in a clean, organized directory structure
 
 3. AI-Powered PDF Parsing
 
-Uses a Large Language Model (LLM) to extract:
+Extracts key financial metrics using an LLM-powered parser:
 
 Revenue (QoQ & YoY)
 
@@ -30,13 +31,13 @@ Margins
 
 Additional financial metrics
 
-Handles inconsistent PDF formatting using natural language extraction.
+Handles inconsistent PDF formatting with natural language extraction.
 
 4. Sentiment Classification
 
-Compares extracted values with broker estimates.
+Compares extracted financial values with broker estimates
 
-Tags the earnings result as:
+Classifies earnings as:
 
 Positive
 
@@ -46,35 +47,35 @@ Neutral
 
 5. Automated Trade Execution
 
-Uses broker APIs to place trades based on sentiment.
+Uses broker APIs to place trades based on sentiment
 
 Implements:
 
 Position sizing
 
-Risk and reward calculations
+Risk–reward calculations
 
-Auto sell on Target/Stop Loss/Timeout
+Auto-sell on Target / Stop Loss / Timeout
 
-Real-time monitoring
+Real-time trade monitoring
 
 6. Logging & Analytics
 
-Stores parsed results
+Stores parsed result JSON files
 
-Saves trade logs for backtesting
+Maintains trade logs for backtesting
 
-Maintains a history of processed companies
+Tracks processed companies to avoid duplicate parsing
 
 7. Deployment Ready
 
-Fully containerized (Docker)
+Fully containerized with Docker
 
 Runs on Google Cloud VM (Compute Engine)
 
 Supports background execution using tmux
 
-
+🧱 Architecture
 NSE/BSE Announcements  
         │
         ▼
@@ -98,27 +99,25 @@ Broker API → Auto Buy/Sell
         ▼
 Logs & Backtesting Storage
 
-
-
 🛠 Tech Stack
 
 Python 3.10+
 
 Google Cloud VM (Ubuntu)
 
-n8n workflow automation
+n8n Workflow Automation
 
-LLM-based PDF extraction (Gemini / custom model)
+LLM-Based PDF Extraction (Gemini / Custom Model)
 
-Yahoo Finance (live data)
+Yahoo Finance API (Live Market Data)
 
-Watchdog (filesystem events)
+Watchdog (Filesystem Listener)
 
-Docker
+Docker / Docker Compose
 
-Cron / scheduled jobs
+Cron Jobs / Scheduled Automation
 
-*📁 Directory Structure*
+📁 Directory Structure
 project/
 │── downloads/               # Raw downloaded PDFs
 │── parsed_results/          # AI-extracted JSON data
@@ -134,16 +133,15 @@ project/
 │── requirements.txt
 │── README.md
 
-
 ⚙️ Setup & Installation
 1. Clone Repository
-git clone https://github.com/yourusername/earnings-sentiment-trading.git
-cd earnings-sentiment-trading
+git clone https://github.com/yourusername/AI-Earnings-Sentiment-Trading.git
+cd AI-Earnings-Sentiment-Trading
 
 2. Install Dependencies
 pip install -r requirements.txt
 
-3. Environment Variables
+3. Configure Environment Variables
 
 Create a .env file:
 
@@ -151,7 +149,7 @@ BROKER_API_KEY=xxxx
 BROKER_API_SECRET=xxxx
 GEMINI_API_KEY=xxxx
 
-4. Start Watcher
+4. Start Watcher Service
 python src/watcher.py
 
 5. Start PDF Parser
@@ -160,43 +158,49 @@ python src/parser.py
 6. Run Sentiment Engine
 python src/sentiment.py
 
-7. Run Trade Execution
+7. Execute Trade Engine
 python src/trade.py
 
 🧪 How It Works (Step-by-Step)
 
 System detects new quarterly result announcement
 
-Downloads PDF to downloads/
+Downloads PDF to the downloads/ folder
 
-AI model reads PDF and extracts financial metrics
+AI model extracts financial metrics
 
-Compares with broker estimates
+Compares extracted numbers with broker estimates
 
-Assigns sentiment (Positive/Negative/Neutral)
+Assigns sentiment (Positive / Negative / Neutral)
 
-Trade logic calculates quantity, SL, target, and risk
+Calculates quantity, SL, target & risk
 
-Sends order to broker API
+Places order via broker API
 
-Monitors live price
+Monitors live price via Yahoo Finance
 
-Auto exits position
+Automatically exits based on SL/Target/Timeout
 
-Logs data for future analysis
+Logs trade and parsed data for future analysis
 
 🧹 Auto Cleanup
 
-Old files older than 7 days (PDFs + JSON outputs) are automatically deleted every night.
+A scheduled cleanup process deletes:
+
+PDFs older than 7 days
+
+JSON parsed files older than 7 days
+
+This keeps storage clean and optimized.
 
 ⚖️ Legal Disclaimer
 
-This system uses public information from NSE/BSE and is intended for personal trading automation.
+This system uses publicly available information from NSE/BSE and is intended purely for personal automated trading.
 
-It does not distribute or sell data
+It does not redistribute or sell any market data
 
 It does not provide financial advice
 
-It complies with public-domain data usage norms
+It adheres to public-domain data usage norms
 
-Users must ensure compliance with SEBI and broker API rules for their region.
+Users are responsible for ensuring compliance with SEBI, exchange policies, and broker API rules.
